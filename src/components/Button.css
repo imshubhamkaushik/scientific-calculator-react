@@ -1,0 +1,29 @@
+.btn {
+    background: #292945;
+    color: #edecec;
+    font-size: 1.16rem;
+    border: none;
+    border-radius: 13px;
+    padding: 18px 0;
+    box-shadow: 0 2px 6px #1112;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    user-select: none;
+}
+
+.btn:hover {
+    background: #393969;
+    color: #16f2f3;
+}
+
+.btn-clear {
+    background: #f34a4a !important;
+    color: #fff !important;
+    font-weight: bold;
+}
+
+.btn-equals {
+    background: #16f2f3 !important;
+    color: #101c22 !important;
+    font-weight: bold;
+}

@@ -1,0 +1,16 @@
+.calc-display {
+    width: 95%;
+    min-height: 48px;
+    margin-bottom: 22px;
+    background: #121d25;
+    color: #16f2f3;
+    border-radius: 12px;
+    font-size: 1.36rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 16px;
+    box-shadow: 0 0 12px #1bc9ea22 inset;
+    overflow-x: auto;
+    user-select: none;
+}
