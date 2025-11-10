@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+    environment {
+        AWS_CREDENTIALS = credentials('<JENKINS_AWS_CREDS_ID>')
+        SSH_CREDENTIALS = credentials('<JENKINS_SSH_CREDS_ID>')
+        TF_WORKDIR = 'terraform/envs/dev'
+    }
+
+    stages{
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                dir('app/frontend') {
+                    bat 'npm ci'
+                    bat 'npm run build'
+                }
+            }
+        }
+
+        stage('Terraform Init and Plan') {
+            steps {
+                dir("${env.TF_WORKDIR}") {
+                    withCredntials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS]]) {
+                        bat 'terraform init -input=false'
+                        bat 'terraform fmt -check || true'
+                        bat 'terraform validate || true'
+                        bat 'terraform plan -input=false -out=tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("${env.TF_WORKDIR}") {
+                    withCredntials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS]]) {
+                        bat 'terraform apply -input=false tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Upload Frontend to S3') {
+            steps {
+                withCredntials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS]]) {
+                    bat 'aws s3 sync app/frontend/build s3://${frontend_bucket} --acl public-read'
+                }
+            }
+        }
+
+        stage('Generate Inventory and Ansible Deploy') {
+            steps {
+                dir('jenkins/scripts') {
+                    withCredntials([usernamePassword(credentialsId: env.SSH_CREDENTIALS, usernameVariable: 'SSH_USER', passwordVariable: 'SSH_PW')]) {
+                        bat 'chmod +x generate_inventory.sh || true'
+                        bat "./generae_inventory.sh ../../teraform/envs/dev"
+                        bat 'anible-playbook -i ../../ansible/inventory.ini ../../ansible/playbooks/deploy-backend.yaml --private key ~/.ssh/<YOUR_KEY_FILE>'                        
+                    }
+                }
+            }
+        }
+
+        post {
+            always {
+                echo 'Pipeline finished'
+            }
+            failure {
+                echo 'Pipeline failed'
+            }
+        }
+    }
+}

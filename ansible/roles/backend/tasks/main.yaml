@@ -1,0 +1,48 @@
+- name: Ensure Node.js repo present
+  apt_key:
+    url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+    state: present
+
+- name: Add NodeSource apt repository
+  apt_repository:
+    repo:  deb https://deb.nodesource.com/node_18.x {{ ansible_lsb.codename }} main
+    state: present
+  
+- name: Install NodeJS and build essentials
+  apt:
+    name: [nodejs, build-essential]
+    state: present
+
+- name: Create app directory
+  file:
+    path: /opt/backend
+    state: directory
+    owner: appuser
+    group: appuser
+
+- name: Copy backend code
+  synchronize:
+    src: ../../app/backend/
+    dest: /opt/backend/
+    rsync_opts: [\--archive','--delete']
+
+- name: Install npm dependencies
+  npm:
+    path: /opt/backend
+    production: yes
+
+- name: Create systemd service file
+  template:
+    src: backend.service.j2
+    dest: /etc/systemd/system/backend.service
+    mode: '0644'
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start backend
+  systemd:
+    name: backend.service
+    enabled: yes
+    state: started
