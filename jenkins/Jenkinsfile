@@ -4,6 +4,7 @@ pipeline {
         AWS_CREDENTIALS = credentials('<JENKINS_AWS_CREDS_ID>')
         SSH_CREDENTIALS = credentials('<JENKINS_SSH_CREDS_ID>')
         TF_WORKDIR = 'terraform/envs/dev'
+        scr_app_bucket = '<BUCKET_NAME>' // replace with your bucket name or inject via Jenkins credentials
     }
 
     stages{
@@ -15,10 +16,18 @@ pipeline {
 
         stage('Build Frontend') {
             steps {
-                dir('app/frontend') {
-                    bat 'npm ci'
-                    bat 'npm run build'
-                }
+                // build from repo root where package.json and src/ reside
+                bat 'npm ci'
+                bat 'npm run build'
+                // sanity check for backend purposes
+                bat '''
+                  if [ ! -d "src/server" ] || [ ! -d "src/backend" ] || [ ! -d "src/api" ]; then
+                    echo "ackend detected under src/"
+                    touch backend_present.flag
+                  else
+                    echo "No backend detected unde src/"
+                  fi
+                '''
             }
         }
 
@@ -45,21 +54,29 @@ pipeline {
             }
         }
 
-        stage('Upload Frontend to S3') {
+        stage('Upload to S3') {
             steps {
                 withCredntials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS]]) {
-                    bat 'aws s3 sync app/frontend/build s3://${frontend_bucket} --acl public-read'
+                    bat 'aws s3 sync build/ s3://${scr_app_bucket} --acl public-read'
+                    // optional: invalidate cloudfront if you store the distribution id in env var
+                    // bat "aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_ID} --paths '/*'"
+                    // the build commands now run from repo root: sync uses the build/ artifact produced there
                 }
             }
         }
 
         stage('Generate Inventory and Ansible Deploy') {
             steps {
-                dir('jenkins/scripts') {
-                    withCredntials([usernamePassword(credentialsId: env.SSH_CREDENTIALS, usernameVariable: 'SSH_USER', passwordVariable: 'SSH_PW')]) {
-                        bat 'chmod +x generate_inventory.sh || true'
-                        bat "./generae_inventory.sh ../../teraform/envs/dev"
-                        bat 'anible-playbook -i ../../ansible/inventory.ini ../../ansible/playbooks/deploy-backend.yaml --private key ~/.ssh/<YOUR_KEY_FILE>'                        
+                script {
+                    if (fileExists('backend_present.flag')) {
+                        echo 'Backend present — running inventory generator and Ansible'
+                        dir('jenkins/scripts') {
+                          sh 'chmod +x generate_inventory.sh || true'
+                          sh "./generate_inventory.sh ../../terraform/envs/dev"
+                        }
+                        sh "ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy-backend.yml --private-key ~/.ssh/<YOUR_KEY_FILE>"
+                    } else {
+                        echo 'No backend detected - skipping Ansible deploy'
                     }
                 }
             }
@@ -75,3 +92,5 @@ pipeline {
         }
     }
 }
+
+// backend_present.flag is a siple presence marker; Jenkins runs Ansible only if server code exists under src/

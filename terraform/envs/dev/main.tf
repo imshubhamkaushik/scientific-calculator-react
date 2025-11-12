@@ -2,12 +2,13 @@ terraform {
   required_providers {
     aws = {
         source = "hashicorp/aws"
+        version = ">= 4.0"
     }
   }
 }
 
 provider "aws" {
-    region = "us-east-1"  
+    region = var.aws_region  
 }
 
 variable "aws_region" {
@@ -30,7 +31,8 @@ variable "private_subnets" {
 }
 
 variable "ssh_key_name" {
-    type = string  
+    type = string
+    default = ""  
 }
 
 module "vpc" {
@@ -38,6 +40,7 @@ module "vpc" {
     vpc_cidr = "10.0.0.0/16"
     public_subnets = var.public_subnets
     private_subnets = var.private_subnets
+    region = var.aws_region
 }
 
 module "frontend" {
@@ -49,6 +52,7 @@ module "frontend" {
 module "iam" {
     source = "../../modules/iam"
     s3_bucket = var.frontend_bucket_name  
+    region = var.aws_region
 }
 
 output "bucket_name" {
@@ -57,4 +61,8 @@ output "bucket_name" {
 
 output "cdn_domain" {
     value = module.frontend.cdn_domain  
+}
+
+output "vpc_id" {
+    value = module.vpc.vpc_id  
 }

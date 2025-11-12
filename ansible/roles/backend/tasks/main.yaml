@@ -2,16 +2,19 @@
   apt_key:
     url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
     state: present
+  when: ansible_os_family == "Debian" or ansible_distribution == "Ubuntu"
 
 - name: Add NodeSource apt repository
   apt_repository:
     repo:  deb https://deb.nodesource.com/node_18.x {{ ansible_lsb.codename }} main
     state: present
+  when: ansible_os_family == "Debian" or ansible_distribution == "Ubuntu
   
 - name: Install NodeJS and build essentials
   apt:
     name: [nodejs, build-essential]
     state: present
+  when: ansible_os_family == "Debian" or ansible_distribution == "Ubuntu
 
 - name: Create app directory
   file:
@@ -20,29 +23,40 @@
     owner: appuser
     group: appuser
 
-- name: Copy backend code
+- name: Copy backend code if exists under src
+  when: backend_src_dir != ""
   synchronize:
-    src: ../../app/backend/
+    src: "{{ backend_src_dir }}/"
     dest: /opt/backend/
-    rsync_opts: [\--archive','--delete']
+    rsync_opts: ['--archive','--delete']
+  become: yes
 
-- name: Install npm dependencies
+- name: Install npm dependencies if package.json present
+  when:
+    - backend_src_dir != ""
+    - ansible.builtin.stat(path='/opt/backend/package.json').stat.exists
   npm:
     path: /opt/backend
     production: yes
 
-- name: Create systemd service file
+- name: Create systemd service file (if backend present)
+  when: backend_src_dir != ""
   template:
     src: backend.service.j2
     dest: /etc/systemd/system/backend.service
     mode: '0644'
+  become: yes
 
-- name: Reload systemd
+- name: Reload systemd (if backend present)
+  when: backend_src_dir != ""
   systemd:
     daemon_reload: yes
+  become: yes
 
-- name: Enable and start backend
+- name: Enable and start backend (if backend present)
+  when: backend_src_dir != ""
   systemd:
     name: backend.service
     enabled: yes
     state: started
+  become: yes
