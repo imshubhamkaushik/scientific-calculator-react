@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import Button from "./Button";
 import "./Keypad.css";
 
@@ -14,7 +15,7 @@ const Keypad = ({ onButtonClick }) => {
   ];
 
   return (
-    <div className="calc-keypad">
+    <div className="calc-keypad" aria-label="Calculator keypad">
       {buttons.flat().map((btn, idx) => (
         <Button
           key={idx}
@@ -27,6 +28,10 @@ const Keypad = ({ onButtonClick }) => {
       ))}
     </div>
   );
+};
+
+Keypad.propTypes = {
+  onButtonClick: PropTypes.func.isRequired,
 };
 
 export default Keypad;

@@ -14,3 +14,11 @@
     overflow-x: auto;
     user-select: none;
 }
+
+.calc-display span {
+    white-space: nowrap;
+}
+
+.calc-display-error {
+    color: #ff6b7b;
+}

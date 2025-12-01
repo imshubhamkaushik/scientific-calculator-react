@@ -1,13 +1,19 @@
 [Unit]
-Description=Node Backend Service
+Description=Scientific Calculator Backend
 After=network.target
 
 [Service]
 User=appuser
 WorkingDirectory=/opt/backend
 ExecStart=/usr/bin/node /opt/backend/index.js
-Restart=always
 Environment=NODE_ENV=production
+Environment=DB_HOST={{ db_host | default('') }}
+Environment=DB_PORT={{ db_port | default('5432') }}
+Environment=DB_USER={{ db_user | default('appuser') }}
+Environment=DB_PASSWORD={{ db_password | default('apppass') }}
+Environment=DB_NAME={{ db_name | default('appdb') }}
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

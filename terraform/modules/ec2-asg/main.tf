@@ -28,3 +28,8 @@ resource "aws_autoscaling_group" "asg" {
 output "asg_name" {
     value = aws_autoscaling_group.asg.name  
 }
+
+# If RDS is created
+output "rds_endpoint" {
+    value = aws_db_instance.postgres.address  
+}
