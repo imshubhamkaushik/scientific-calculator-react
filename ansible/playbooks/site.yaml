@@ -1,0 +1,14 @@
+---
+- name: Configure monitor EC2 instance for Scientific Calculator
+  hosts: monitor
+  become: yes
+
+  vars:
+    # For now, manually set this. Later, we can pull from Terraform output.
+    synthetic_target_url: "https://YOUR_CLOUDWATCH_DOMAIN_HERE"
+
+  roles:
+    - common
+    - hardening
+    - cloudwatch-agent
+    - synthetic-checks

@@ -1,5 +1,0 @@
-- hosts: backend
-  become: yes
-  roles:
-    - common
-    - backend

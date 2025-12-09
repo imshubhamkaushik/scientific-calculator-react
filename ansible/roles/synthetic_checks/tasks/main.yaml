@@ -1,0 +1,27 @@
+---
+- name: Ensure synthetic check log file exists
+  file:
+    path: /var/log/synthetic_check.log
+    state: file
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+
+- name: Deploy synthetic check script
+  copy:
+    src: synthetic_check.sh
+    dest: /usr/local/bin/synthetic_check.sh
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+
+- name: Configure cron job for synthetic checks (every 5 minutes)
+  cron:
+    name: "Synthetic check for Scientific Calculator frontend"
+    user: root
+    # Inject the target URL from Ansible variable
+    job: "/usr/local/bin/synthetic_check.sh {{ synthetic_target_url }} >/dev/null 2>&1"
+    minute: "*/5"
+  become: yes

@@ -1,14 +1,31 @@
-- name: Update apt cache
-  apt: update_cache=yes cache_valid_time=3600
+# This role handles basic OS prep.
+---
+- name: Update all packages
+  yum:
+    name: "*"
+    state: latest
+  become: true
 
-- name: Ensure basic packages installed
-  apt:
-    name: [git, curl, unzip, python3-pip]
+- name: Install common tools
+  yum:
+    name:
+      - git
+      - jq
+      - curl
+      - htop
+      - telnet
     state: present
+  become: true
 
-- name: Create app user
-  user:
-    name: appuser
-    shell: /bin/bash
+- name: Ensure chronyd is installed fo time sync
+  yum:
+    name: chrony
     state: present
-    create_home: yes
+  become: true
+
+- name: Enable and start chronyd
+  systemd:
+    name: chronyd
+    enabled: yes
+    state: started
+  become: true

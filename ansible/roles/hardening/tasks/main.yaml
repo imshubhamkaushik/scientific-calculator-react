@@ -1,0 +1,35 @@
+# We’ll:
+# - Disable SSH password authentication.
+# - Optionally enforce only key-based login.
+# - Restart SSH.
+# “We apply minimal but critical hardening on the monitor host: disabling password auth and root SSH access, enforcing key-based login only.”
+---
+- name: Disable SSH password authentication.
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  become: yes
+
+- name: Disable root ogin over SSH
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  become: yes
+
+- name: Ensure SSH protocol 2 is used
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Protocol'
+    line: 'Protocol 2'
+    state: present
+  become: yes
+
+- name: Restart sshd to apply changes
+  systemd:
+    name: sshd
+    state: restarted
+  become: yes
