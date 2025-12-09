@@ -88,6 +88,7 @@ flowchart LR
 
 3. Repository Structure
 
+```
 scientific-calculator-react/
 ├── ansible/
 │ ├── roles/
@@ -127,6 +128,7 @@ scientific-calculator-react/
 ├── build/ # Production build output (gitignored)
 ├── package.json
 └── README.md
+```
 
 4. Infrastructure as Code (Terraform)
    4.1 Modules
