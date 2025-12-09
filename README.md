@@ -1,4 +1,6 @@
-# Scientific Calculator – AWS DevOps Project (Terraform · Ansible · Jenkins · AWS)
+# Scientific Calculator – AWS DevOps Project
+
+**(Terraform · Ansible · Jenkins · AWS)**
 
 A production-style DevOps project built around a **React-based Scientific Calculator** frontend app.
 
@@ -10,8 +12,8 @@ The goal of this project is to showcase **1–2 years equivalent DevOps experien
 - **Ansible** for EC2 configuration & hardening
 - **Bash scripts** for end-to-end automation
 - **Jenkins** for CI/CD
+- **AWS-native monitoring**
 - **CloudWatch + SNS** for monitoring & alerts
-- **No Kubernetes / Prometheus / Grafana** – only AWS-native monitoring
 
 ---
 
@@ -32,6 +34,8 @@ The goal of this project is to showcase **1–2 years equivalent DevOps experien
   - Terraform plan/apply
   - Ansible configuration
   - Frontend build & deployment to S3 + CloudFront.
+
+---
 
 ### 1.1 Architecture Diagram (Mermaid)
 
@@ -64,7 +68,9 @@ flowchart LR
     CW -->|Alarms| SNS --> Dev
 ```
 
-2. Tech Stack
+---
+
+## 2. Tech Stack
 
 - Cloud / Infra
 
@@ -86,7 +92,9 @@ flowchart LR
   React SPA (Scientific Calculator)
   Built with npm run build, static assets in /build
 
-3. Repository Structure
+---
+
+## 3. Repository Structure
 
 ```
 scientific-calculator-react/
@@ -130,8 +138,11 @@ scientific-calculator-react/
 └── README.md
 ```
 
-4. Infrastructure as Code (Terraform)
-   4.1 Modules
+---
+
+## 4. Infrastructure as Code (Terraform)
+
+### 4.1. Modules
 
 - network
 
@@ -143,13 +154,13 @@ scientific-calculator-react/
 
   Creates:
 
-        Private S3 bucket (block public access) for static frontend hosting.
+  - Private S3 bucket (block public access) for static frontend hosting.
 
-        CloudFront Origin Access Control (OAC).
+  - CloudFront Origin Access Control (OAC).
 
-        CloudFront distribution with SPA-friendly error handling (403/404 → index.html).
+  - CloudFront distribution with SPA-friendly error handling (403/404 → index.html).
 
-        Optional S3 logs bucket for CloudFront access logs.
+  - Optional S3 logs bucket for CloudFront access logs.
 
   Exposes:
 
@@ -161,41 +172,41 @@ scientific-calculator-react/
 
   Creates:
 
-        Security group (SSH from a configured CIDR only, full outbound).
+  - Security group (SSH from a configured CIDR only, full outbound).
 
-        IAM role + instance profile with:
+  - IAM role + instance profile with:
 
-            AmazonSSMManagedInstanceCore
-            Custom policy for CloudWatch logs & metrics.
+    AmazonSSMManagedInstanceCore
+    Custom policy for CloudWatch logs & metrics.
 
-        EC2 instance (Amazon Linux 2) in the public subnet.
+  - EC2 instance (Amazon Linux 2) in the public subnet.
 
-        User data for base tooling (Python, CloudWatch Agent, etc.).
+  - User data for base tooling (Python, CloudWatch Agent, etc.).
 
   Exposes:
 
-        instance_id
-        public_ip
-        public_dns
+        - instance_id
+        - public_ip
+        - public_dns
 
 - cloudwatch
 
-      Creates:
+        Creates:
 
-          SNS topic for alerts.
-          Email subscription to a configured email.
-          CloudWatch alarms for:
-              EC2 StatusCheckFailed
-              Custom metric ScientificCalculator/SyntheticAvailability (from synthetic script).
+          -  SNS topic for alerts.
+          -  Email subscription to a configured email.
+          -  CloudWatch alarms for:
+              -  EC2 StatusCheckFailed
+              -  Custom metric ScientificCalculator/SyntheticAvailability (from synthetic script).
 
-  4.2 Environment-based Root Module (infra/terraform/envs/dev)
+### 4.2 Environment-based Root Module (infra/terraform/envs/dev)
 
 - Wires modules together:
 
-  module "network" { ... }
-  module "s3_cloudfront" { ... }
-  module "ec2_monitor" { vpc_id = module.network.vpc_id ... }
-  module "cloudwatch" { monitor_instance_id = module.ec2_monitor.instance_id ... }
+  - module "network" { ... }
+  - module "s3_cloudfront" { ... }
+  - module "ec2_monitor" { vpc_id = module.network.vpc_id ... }
+  - module "cloudwatch" { monitor_instance_id = module.ec2_monitor.instance_id ... }
 
 - Uses variables.tf + terraform.tfvars to define:
 
@@ -211,7 +222,7 @@ scientific-calculator-react/
 
       In a real setup, these are either created once manually or via a separate “backend bootstrap” Terraform project.
 
-  4.3 Terraform Wrapper Script
+### 4.3 Terraform Wrapper Script
 
 ./scripts/provision_infra.sh:
 
@@ -223,8 +234,11 @@ scientific-calculator-react/
 
 This is what Jenkins uses in the Terraform Plan / Apply stages.
 
-5. Configuration Management (Ansible)
-   5.1 Roles
+---
+
+## 5. Configuration Management (Ansible)
+
+### 5.1 Roles
 
 - common
 
@@ -270,7 +284,8 @@ This is what Jenkins uses in the Terraform Plan / Apply stages.
               ScientificCalculator/SyntheticAvailability (1 = OK, 0 = Fail)
               ScientificCalculator/SyntheticLatencyMs.
 
-  5.2 Playbook
+  ### 5.2 Playbook
+
   ansible/playbooks/site.yml:
 
 - Targets the monitor host group (the EC2 instance).
@@ -278,7 +293,8 @@ This is what Jenkins uses in the Terraform Plan / Apply stages.
   common → hardening → cloudwatch_agent → synthetic_checks.
 - Accepts the CloudFront URL as a variable synthetic_target_url.
 
-  5.3 Ansible Wrapper Script
+  ### 5.3 Ansible Wrapper Script
+
   ./scripts/configure_ec2.sh:
 
 - Reads monitor_public_dns from Terraform outputs.
@@ -294,9 +310,12 @@ Usage:
     export ANSIBLE_SSH_KEY_PATH=~/.ssh/your-key.pem
     ./scripts/configure_ec2.sh dev
 
-6. Frontend Build & Deployment
+---
 
-6.1 Build Script
+## 6. Frontend Build & Deployment
+
+### 6.1 Build Script
+
 ./scripts/build_frontend.sh:
 
 - Runs from repo root.
@@ -313,7 +332,7 @@ Usage:
 
 - Verifies the ./build directory exists.
 
-  6.2 Deploy Script
+  ### 6.2 Deploy Script
 
 ./scripts/deploy_frontend.sh:
 
@@ -333,8 +352,11 @@ Usage:
     ./scripts/build_frontend.sh
     ./scripts/deploy_frontend.sh dev
 
-7. CI/CD with Jenkins
-   The Jenkinsfile defines a declarative pipeline:
+---
+
+## 7. CI/CD with Jenkins
+
+The Jenkinsfile defines a declarative pipeline:
 
 Stages:-
 
@@ -356,9 +378,9 @@ Runs ./scripts/provision_infra.sh dev apply.
 
 Controlled by CONFIGURE_EC2=true build parameter.
 
-Uses:
-AWS credentials (aws-dev-creds) to read Terraform outputs.
-SSH key credentials (ansible-ssh-key) for Ansible.
+- Uses:
+  - AWS credentials (aws-dev-creds) to read Terraform outputs.
+  - SSH key credentials (ansible-ssh-key) for Ansible.
 
 Runs ./scripts/configure_ec2.sh dev.
 
@@ -368,104 +390,109 @@ Runs ./scripts/configure_ec2.sh dev.
 - Deploy Frontend to S3 + CloudFront
   Runs ./scripts/deploy_frontend.sh dev with AWS credentials.
 
-Post Actions
+- Post Actions
 
-In post { always { ... } }:
+  - In post { always { ... } }:
 
     Runs ./scripts/export_tf_outputs.sh dev (with AWS creds) to dump all Terraform outputs to JSON.
 
-Archives:
+- Archives:
 
-    infra/terraform/envs/dev/terraform-outputs-dev.json
+  - infra/terraform/envs/dev/terraform-outputs-dev.json
     so each Jenkins build has a record of the current infra state.
 
-Jenkins Credentials Used
-aws-dev-creds → AWS access keys with necessary permissions.
+- Jenkins Credentials Used
 
-    ansible-ssh-key → SSH private key matching monitor_key_name used in Terraform (EC2 key pair).
+  - aws-dev-creds → AWS access keys with necessary permissions.
 
-8. Monitoring & Alerts
+  - ansible-ssh-key → SSH private key matching monitor_key_name used in Terraform (EC2 key pair).
 
-CloudWatch Agent on the EC2 monitor:
+---
 
-System metrics: CPU, memory.
-Logs: /var/log/messages, /var/log/secure.
+## 8. Monitoring & Alerts
 
-Synthetic Monitoring Script from EC2:
+- CloudWatch Agent on the EC2 monitor:
 
-Periodically hits the CloudFront URL.
-Publishes:
+  - System metrics: CPU, memory.
+  - Logs: /var/log/messages, /var/log/secure.
 
-ScientificCalculator/SyntheticAvailability
-ScientificCalculator/SyntheticLatencyMs
+- Synthetic Monitoring Script from EC2:
 
-CloudWatch Alarms:
+  - Periodically hits the CloudFront URL.
 
-EC2 StatusCheckFailed > 0 for 2 periods.
-Synthetic availability average < 0.99 across 2× 5-minute periods.
+- Publishes:
 
-SNS:
+  - ScientificCalculator/SyntheticAvailability
+  - ScientificCalculator/SyntheticLatencyMs
 
-Topic for alerts.
-Email subscription for notifications.
+- CloudWatch Alarms:
 
-9. How to Run End-to-End (Dev Environment)
+  - EC2 StatusCheckFailed > 0 for 2 periods.
+  - Synthetic availability average < 0.99 across 2× 5-minute periods.
 
-Prerequisites
+- SNS:
 
-AWS account & IAM user/role with permissions for:
-EC2, VPC, S3, CloudFront, IAM, CloudWatch, SNS.
+  - Topic for alerts.
+  - Email subscription for notifications.
 
-Tools installed locally or on Jenkins agent:
-terraform, aws, ansible, node, npm, bash.
+---
 
-EC2 key pair created in AWS (for SSH) and name referenced in terraform.tfvars.
+## 9. How to Run End-to-End (Dev Environment)
 
-Steps (Manual)
+### Prerequisites
 
-# 1) Provision or update infrastructure
+- AWS account & IAM user/role with permissions for:
+  EC2, VPC, S3, CloudFront, IAM, CloudWatch, SNS.
 
-./scripts/provision_infra.sh dev apply
+- Tools installed locally or on Jenkins agent:
+  terraform, aws, ansible, node, npm, bash.
 
-# 2) Configure monitoring EC2 (Ansible)
+- EC2 key pair created in AWS (for SSH) and name referenced in terraform.tfvars.
 
-export ANSIBLE_SSH_KEY_PATH=~/.ssh/your-key.pem
-./scripts/configure_ec2.sh dev
+### Steps (Manual)
 
-# 3) Build frontend
+1. Provision or update infrastructure
 
-./scripts/build_frontend.sh
+- ./scripts/provision_infra.sh dev apply
 
-# 4) Deploy frontend
+2. Configure monitoring EC2 (Ansible)
 
-./scripts/deploy_frontend.sh dev
+- export ANSIBLE_SSH_KEY_PATH=~/.ssh/your-key.pem
+- ./scripts/configure_ec2.sh dev
 
-# 5) (Optional) Export Terraform outputs to JSON
+3. Build frontend
 
-./scripts/export_tf_outputs.sh dev
+- ./scripts/build_frontend.sh
+
+4. Deploy frontend
+
+- ./scripts/deploy_frontend.sh dev
+
+5. (Optional) Export Terraform outputs to JSON
+
+- ./scripts/export_tf_outputs.sh dev
+
 After deployment, the app is available at:
 
-https://<cloudfront_domain_name>/
-(from Terraform output / deploy script logs).
+- https://<cloudfront_domain_name>/
+  (from Terraform output / deploy script logs).
 
-10. Cost & Cleanup
+---
+
+## 10. Cost & Cleanup
 
 This project uses:
 
-1 t3.micro (or similar) EC2 instance
-S3 storage + CloudFront data transfer (low for small project)
-CloudWatch + SNS (minimal cost)
+- 1 t3.micro (or similar) EC2 instance
+- S3 storage + CloudFront data transfer (low for small project)
+- CloudWatch + SNS (minimal cost)
 
 To minimize cost:
 
-Use only dev environment.
-Stop or terminate the EC2 instance when not in use.
+- Use only dev environment.
+- Stop or terminate the EC2 instance when not in use.
 
 To fully clean up dev infra:
 
-cd infra/terraform/envs/dev
-terraform destroy
-
-```
-
-```
+- cd infra/terraform/envs/dev
+- terraform destroy
