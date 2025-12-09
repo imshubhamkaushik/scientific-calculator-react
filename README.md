@@ -62,83 +62,84 @@ flowchart LR
     EC2 -->|CW Agent logs & system metrics| CW
 
     CW -->|Alarms| SNS --> Dev
+```
 
 2. Tech Stack
 
 - Cloud / Infra
 
-    AWS: S3, CloudFront, VPC, EC2, IAM, CloudWatch, SNS
-    Terraform: modular, environment-based (infra/terraform)
-    Ansible: roles and playbooks for EC2 configuration (ansible/)
+  AWS: S3, CloudFront, VPC, EC2, IAM, CloudWatch, SNS
+  Terraform: modular, environment-based (infra/terraform)
+  Ansible: roles and playbooks for EC2 configuration (ansible/)
 
 - Automation & CI/CD
 
-    Jenkins (declarative pipeline via Jenkinsfile)
-    Bash scripts (scripts/) for:
-        Infrastructure provisioning
-        EC2 configuration
-        React build & deploy
-        Terraform output export
+  Jenkins (declarative pipeline via Jenkinsfile)
+  Bash scripts (scripts/) for:
+  Infrastructure provisioning
+  EC2 configuration
+  React build & deploy
+  Terraform output export
 
 - Frontend
 
-    React SPA (Scientific Calculator)
-    Built with npm run build, static assets in /build
+  React SPA (Scientific Calculator)
+  Built with npm run build, static assets in /build
 
 3. Repository Structure
 
 scientific-calculator-react/
 ├── ansible/
-│   ├── roles/
-│   │   ├── common/              # OS updates, base tools, time sync
-│   │   ├── hardening/           # SSH hardening (no password, no root login)
-│   │   ├── cloudwatch_agent/    # CloudWatch agent config & restart
-│   │   └── synthetic_checks/    # Synthetic monitor script + cron
-│   └── playbooks/
-│       └── site.yml             # Main playbook for EC2 monitor
+│ ├── roles/
+│ │ ├── common/ # OS updates, base tools, time sync
+│ │ ├── hardening/ # SSH hardening (no password, no root login)
+│ │ ├── cloudwatch_agent/ # CloudWatch agent config & restart
+│ │ └── synthetic_checks/ # Synthetic monitor script + cron
+│ └── playbooks/
+│ └── site.yml # Main playbook for EC2 monitor
 │
 ├── infra/
-│   └── terraform/
-│       ├── modules/
-│       │   ├── network/         # VPC, subnet, IGW, route table
-│       │   ├── s3_cloudfront/   # S3 bucket, OAC, CloudFront distribution
-│       │   ├── ec2_monitor/     # EC2 instance, SG, IAM role/profile
-│       │   └── cloudwatch/      # SNS topic & alarms (EC2 + synthetic metrics)
-│       └── envs/
-│           └── dev/             # Root module for dev environment
-│               ├── main.tf
-│               ├── variables.tf
-│               ├── outputs.tf
-│               ├── provider.tf
-│               ├── backend.tf   # Optional remote backend (S3+DynamoDB)
-│               └── terraform.tfvars
+│ └── terraform/
+│ ├── modules/
+│ │ ├── network/ # VPC, subnet, IGW, route table
+│ │ ├── s3_cloudfront/ # S3 bucket, OAC, CloudFront distribution
+│ │ ├── ec2_monitor/ # EC2 instance, SG, IAM role/profile
+│ │ └── cloudwatch/ # SNS topic & alarms (EC2 + synthetic metrics)
+│ └── envs/
+│ └── dev/ # Root module for dev environment
+│ ├── main.tf
+│ ├── variables.tf
+│ ├── outputs.tf
+│ ├── provider.tf
+│ ├── backend.tf # Optional remote backend (S3+DynamoDB)
+│ └── terraform.tfvars
 │
 ├── scripts/
-│   ├── provision_infra.sh       # Terraform init/plan/apply wrapper
-│   ├── configure_ec2.sh         # Fetch EC2 DNS from TF outputs & run Ansible
-│   ├── build_frontend.sh        # npm ci/test/build → ./build
-│   ├── deploy_frontend.sh       # Sync ./build → S3 + CloudFront invalidation
-│   └── export_tf_outputs.sh     # Export TF outputs to JSON for debugging/CI
+│ ├── provision_infra.sh # Terraform init/plan/apply wrapper
+│ ├── configure_ec2.sh # Fetch EC2 DNS from TF outputs & run Ansible
+│ ├── build_frontend.sh # npm ci/test/build → ./build
+│ ├── deploy_frontend.sh # Sync ./build → S3 + CloudFront invalidation
+│ └── export_tf_outputs.sh # Export TF outputs to JSON for debugging/CI
 │
-├── Jenkinsfile                  # Jenkins CI/CD pipeline
-├── src/                         # React source code
-├── public/                      # Static assets (CRA-style)
-├── build/                       # Production build output (gitignored)
+├── Jenkinsfile # Jenkins CI/CD pipeline
+├── src/ # React source code
+├── public/ # Static assets (CRA-style)
+├── build/ # Production build output (gitignored)
 ├── package.json
 └── README.md
 
 4. Infrastructure as Code (Terraform)
-4.1 Modules
+   4.1 Modules
 
 - network
 
-    Creates VPC, public subnet, Internet Gateway, route table.
+  Creates VPC, public subnet, Internet Gateway, route table.
 
-    Used to place the EC2 monitoring instance in a controlled network.
+  Used to place the EC2 monitoring instance in a controlled network.
 
 - s3_cloudfront
 
-    Creates:
+  Creates:
 
         Private S3 bucket (block public access) for static frontend hosting.
 
@@ -148,7 +149,7 @@ scientific-calculator-react/
 
         Optional S3 logs bucket for CloudFront access logs.
 
-    Exposes:
+  Exposes:
 
         bucket_name
         cloudfront_distribution_id
@@ -156,7 +157,7 @@ scientific-calculator-react/
 
 - ec2_monitor
 
-    Creates:
+  Creates:
 
         Security group (SSH from a configured CIDR only, full outbound).
 
@@ -169,7 +170,7 @@ scientific-calculator-react/
 
         User data for base tooling (Python, CloudWatch Agent, etc.).
 
-    Exposes:
+  Exposes:
 
         instance_id
         public_ip
@@ -177,38 +178,38 @@ scientific-calculator-react/
 
 - cloudwatch
 
-    Creates:
+      Creates:
 
-        SNS topic for alerts.
-        Email subscription to a configured email.
-        CloudWatch alarms for:
-            EC2 StatusCheckFailed
-            Custom metric ScientificCalculator/SyntheticAvailability (from synthetic script).
+          SNS topic for alerts.
+          Email subscription to a configured email.
+          CloudWatch alarms for:
+              EC2 StatusCheckFailed
+              Custom metric ScientificCalculator/SyntheticAvailability (from synthetic script).
 
-4.2 Environment-based Root Module (infra/terraform/envs/dev)
+  4.2 Environment-based Root Module (infra/terraform/envs/dev)
 
 - Wires modules together:
 
-    module "network"      { ... }
-    module "s3_cloudfront" { ... }
-    module "ec2_monitor"   { vpc_id = module.network.vpc_id ... }
-    module "cloudwatch"    { monitor_instance_id = module.ec2_monitor.instance_id ... }
+  module "network" { ... }
+  module "s3_cloudfront" { ... }
+  module "ec2_monitor" { vpc_id = module.network.vpc_id ... }
+  module "cloudwatch" { monitor_instance_id = module.ec2_monitor.instance_id ... }
 
 - Uses variables.tf + terraform.tfvars to define:
 
-    CIDR blocks
-    Region
-    Project + environment names
-    SSH key name for EC2
-    SNS alert email
+  CIDR blocks
+  Region
+  Project + environment names
+  SSH key name for EC2
+  SNS alert email
 
 - Optionally uses backend.tf for remote state:
 
-    S3 bucket + DynamoDB lock table
+      S3 bucket + DynamoDB lock table
 
-    In a real setup, these are either created once manually or via a separate “backend bootstrap” Terraform project.
+      In a real setup, these are either created once manually or via a separate “backend bootstrap” Terraform project.
 
-4.3 Terraform Wrapper Script
+  4.3 Terraform Wrapper Script
 
 ./scripts/provision_infra.sh:
 
@@ -221,61 +222,62 @@ scientific-calculator-react/
 This is what Jenkins uses in the Terraform Plan / Apply stages.
 
 5. Configuration Management (Ansible)
-5.1 Roles
+   5.1 Roles
+
 - common
 
-    Updates all packages.
-    Installs base tools: git, curl, jq, htop, etc.
-    Sets up time synchronization using chronyd.
+  Updates all packages.
+  Installs base tools: git, curl, jq, htop, etc.
+  Sets up time synchronization using chronyd.
 
 - hardening
 
-    Edits /etc/ssh/sshd_config:
-        Disables password authentication.
-        Disables root login.
-        Enforces SSH protocol 2.
+  Edits /etc/ssh/sshd_config:
+  Disables password authentication.
+  Disables root login.
+  Enforces SSH protocol 2.
 
-    Restarts sshd.
+  Restarts sshd.
 
 - cloudwatch_agent
 
-    Places amazon-cloudwatch-agent.json config via template.
+  Places amazon-cloudwatch-agent.json config via template.
 
-    Configures:
+  Configures:
 
         Logs: /var/log/messages, /var/log/secure → CloudWatch Logs groups.
 
         Metrics: CPU and memory usage → CloudWatch Metrics.
 
-    Restarts the agent with the new config.
+  Restarts the agent with the new config.
 
 - synthetic_checks
 
-    Deploys synthetic_check.sh to /usr/local/bin/.
+      Deploys synthetic_check.sh to /usr/local/bin/.
 
-    Prepares a log file /var/log/synthetic_check.log.
+      Prepares a log file /var/log/synthetic_check.log.
 
-    Sets up a cron job (every 5 minutes):
+      Sets up a cron job (every 5 minutes):
 
-        synthetic_check.sh <CloudFront URL>
+          synthetic_check.sh <CloudFront URL>
 
-        Uses instance IAM role to call aws cloudwatch put-metric-data.
+          Uses instance IAM role to call aws cloudwatch put-metric-data.
 
-        Sends:
+          Sends:
 
-            ScientificCalculator/SyntheticAvailability (1 = OK, 0 = Fail)
-            ScientificCalculator/SyntheticLatencyMs.
+              ScientificCalculator/SyntheticAvailability (1 = OK, 0 = Fail)
+              ScientificCalculator/SyntheticLatencyMs.
 
-5.2 Playbook
-ansible/playbooks/site.yml:
+  5.2 Playbook
+  ansible/playbooks/site.yml:
 
 - Targets the monitor host group (the EC2 instance).
 - Applies roles in order:
-    common → hardening → cloudwatch_agent → synthetic_checks.
+  common → hardening → cloudwatch_agent → synthetic_checks.
 - Accepts the CloudFront URL as a variable synthetic_target_url.
 
-5.3 Ansible Wrapper Script
-./scripts/configure_ec2.sh:
+  5.3 Ansible Wrapper Script
+  ./scripts/configure_ec2.sh:
 
 - Reads monitor_public_dns from Terraform outputs.
 
@@ -299,30 +301,30 @@ Usage:
 
 - Installs dependencies:
 
-    npm ci if package-lock.json exists.
-    npm install otherwise.
+  npm ci if package-lock.json exists.
+  npm install otherwise.
 
 - Runs tests if a test script exists in package.json.
 
 - Builds the app:
-    NODE_ENV=production npm run build
+  NODE_ENV=production npm run build
 
 - Verifies the ./build directory exists.
 
-6.2 Deploy Script
+  6.2 Deploy Script
 
 ./scripts/deploy_frontend.sh:
 
 - Reads:
 
-    frontend_bucket_name
-    cloudfront_distribution_id
-    cloudfront_domain_name from Terraform outputs (envs/dev).
+  frontend_bucket_name
+  cloudfront_distribution_id
+  cloudfront_domain_name from Terraform outputs (envs/dev).
 
 - Syncs the ./build directory to the S3 bucket:
-    aws s3 sync build/ s3://<bucket>/ --delete
+  aws s3 sync build/ s3://<bucket>/ --delete
 
-- Creates a CloudFront invalidation for /* so updated assets are served.
+- Creates a CloudFront invalidation for /\* so updated assets are served.
 
 Usage:
 
@@ -330,9 +332,10 @@ Usage:
     ./scripts/deploy_frontend.sh dev
 
 7. CI/CD with Jenkins
-The Jenkinsfile defines a declarative pipeline:
+   The Jenkinsfile defines a declarative pipeline:
 
 Stages:-
+
 - Checkout
 
 Pulls the latest code from Git.
@@ -352,16 +355,16 @@ Runs ./scripts/provision_infra.sh dev apply.
 Controlled by CONFIGURE_EC2=true build parameter.
 
 Uses:
-    AWS credentials (aws-dev-creds) to read Terraform outputs.
-    SSH key credentials (ansible-ssh-key) for Ansible.
+AWS credentials (aws-dev-creds) to read Terraform outputs.
+SSH key credentials (ansible-ssh-key) for Ansible.
 
 Runs ./scripts/configure_ec2.sh dev.
 
 - Build Frontend
-    Runs ./scripts/build_frontend.sh.
+  Runs ./scripts/build_frontend.sh.
 
 - Deploy Frontend to S3 + CloudFront
-    Runs ./scripts/deploy_frontend.sh dev with AWS credentials.
+  Runs ./scripts/deploy_frontend.sh dev with AWS credentials.
 
 Post Actions
 
@@ -375,7 +378,7 @@ Archives:
     so each Jenkins build has a record of the current infra state.
 
 Jenkins Credentials Used
-    aws-dev-creds → AWS access keys with necessary permissions.
+aws-dev-creds → AWS access keys with necessary permissions.
 
     ansible-ssh-key → SSH private key matching monitor_key_name used in Terraform (EC2 key pair).
 
@@ -409,28 +412,34 @@ Email subscription for notifications.
 Prerequisites
 
 AWS account & IAM user/role with permissions for:
-    EC2, VPC, S3, CloudFront, IAM, CloudWatch, SNS.
+EC2, VPC, S3, CloudFront, IAM, CloudWatch, SNS.
 
 Tools installed locally or on Jenkins agent:
-    terraform, aws, ansible, node, npm, bash.
+terraform, aws, ansible, node, npm, bash.
 
 EC2 key pair created in AWS (for SSH) and name referenced in terraform.tfvars.
 
 Steps (Manual)
+
 # 1) Provision or update infrastructure
+
 ./scripts/provision_infra.sh dev apply
 
 # 2) Configure monitoring EC2 (Ansible)
+
 export ANSIBLE_SSH_KEY_PATH=~/.ssh/your-key.pem
 ./scripts/configure_ec2.sh dev
 
 # 3) Build frontend
+
 ./scripts/build_frontend.sh
 
 # 4) Deploy frontend
+
 ./scripts/deploy_frontend.sh dev
 
 # 5) (Optional) Export Terraform outputs to JSON
+
 ./scripts/export_tf_outputs.sh dev
 After deployment, the app is available at:
 
@@ -454,4 +463,7 @@ To fully clean up dev infra:
 
 cd infra/terraform/envs/dev
 terraform destroy
+
+```
+
 ```
