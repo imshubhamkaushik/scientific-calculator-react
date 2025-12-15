@@ -1,8 +1,8 @@
-# Scientific Calculator – AWS DevOps Project
+# Infrastructure-as-Code & CI/CD Platform for Static Web Applications on AWS
 
 **(Terraform · Ansible · Jenkins · AWS)**
 
-A production-style DevOps project built around a **React-based Scientific Calculator** frontend app.
+A production-grade AWS DevOps automation platform built using Terraform, Ansible, Jenkins, and CloudWatch to deploy, monitor, and manage a static React application (Scientific Calculator used as the workload).
 
 The goal of this project is to showcase **1–2 years equivalent DevOps experience** using a **static frontend** and a realistic, AWS-native infrastructure:
 
