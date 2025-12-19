@@ -1,0 +1,17 @@
+- name: Install CloudWatch agent
+  yum:
+    name: amazon-cloudwatch-agent
+    state: present
+
+- name: Deploy CloudWatch config
+  template:
+    src: cw-config.json.j2
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+  notify: restart cloudwatch agent
+
+- name: Start CloudWatch agent
+  command: >
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+    -a start
+    -m ec2
+    -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json

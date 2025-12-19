@@ -1,0 +1,13 @@
+- name: Configure nginx site
+  copy:
+    dest: /etc/nginx/conf.d/calculator.conf
+    content: |
+      server {
+        listen 80;
+        root /var/www/calculator;
+        index index.html;
+        location / {
+          try_files $uri /index.html;
+        }
+      }
+  notify: restart nginx

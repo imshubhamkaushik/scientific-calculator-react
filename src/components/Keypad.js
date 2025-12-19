@@ -14,15 +14,19 @@ const Keypad = ({ onButtonClick }) => {
     ["√", "log", "π", "e"],
   ];
 
+  const getButtonClass = (btn) => {
+    if (btn === "C") return "btn-clear";
+    if (btn === "=") return "btn-equals";
+    return "";
+  };
+
   return (
     <div className="calc-keypad" aria-label="Calculator keypad">
-      {buttons.flat().map((btn, idx) => (
+      {buttons.flat().map((btn) => (
         <Button
-          key={idx}
+          key={btn}
           value={btn}
-          className={
-            btn === "C" ? "btn-clear" : btn === "=" ? "btn-equals" : ""
-          }
+          className={getButtonClass(btn)}
           onClick={onButtonClick}
         />
       ))}

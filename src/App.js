@@ -1,39 +1,14 @@
 /* global globalThis */ // tell ESLint that globalThis is a known global
 
 import React, { useState, useEffect, useCallback } from "react";
-import { evaluate } from "mathjs";
 import Display from "./components/Display";
 import Keypad from "./components/Keypad";
+import { evaluateExpression } from "./utils/evaluator";
 import "./App.css";
 
 const HISTORY_KEY = "scientific_calculator_history_v1";
 const MAX_HISTORY_ITEMS = 50;
 const MAX_INPUT_LENGTH = 60;
-
-//convert calculator symbols to mathjs compatible ones
-function normalizeExpression(inputStr) {
-  return inputStr
-      .replaceAll("÷", "/")
-      .replaceAll("×", "*")
-      .replaceAll("π", "pi")
-      // 'e' is already mathjs's constant, no replacement needed
-      .replaceAll("xʸ", "^")
-      .replaceAll("√", "sqrt")
-      // replace "log" that is not already "log10"
-      .replaceAll(/log(?!10)/g, "log10");
-  // mathjs uses log for natural log, so we use log10 for base-10 log
-  // 'e', 'sin', 'cos', 'tan' are already recognized by mathjs
-}
-
-// Append missing closing parenthesis to balance expression
-function balanceParens(exp) {
-  const openParens = (exp.match(/\(/g) || []).length;
-  const closeParens = (exp.match(/\)/g) || []).length;
-  if (openParens > closeParens) {
-    return exp + ")".repeat(openParens - closeParens);
-  }
-  return exp;
-}
 
 function App() {
   const [input, setInput] = useState("");
@@ -65,39 +40,6 @@ function App() {
     }
   }, [history]);
 
-  const evaluateExpression = useCallback((rawInput) => {
-    const trimmed = rawInput.trim();
-    if (!trimmed) return;
-
-    // Prepare a valid expression
-    let exp = normalizeExpression(trimmed);
-    exp = balanceParens(exp);
-
-    try {
-      const result = evaluate(exp);
-      const formatted =
-        typeof result === "number"
-          ? Number(result.toPrecision(10)).toString()
-          : String(result);
-
-      setOutput(formatted);
-      setError("");
-
-      const entry = {
-        id: Date.now(),
-        expression: trimmed,
-        result: formatted,
-        createdAt: new Date().toISOString(),
-      };
-
-      setHistory((prev) => [entry, ...prev].slice(0, MAX_HISTORY_ITEMS));
-    } catch (err) {
-      console.error("Evaluation error:", err);
-      setOutput("");
-      setError("Error");
-    }
-  }, []);
-
   const handleButtonClick = useCallback(
     (btn) => {
       // Clear "Error" on next input
@@ -123,8 +65,8 @@ function App() {
           break;
 
         case "=":
-          if (!input || input.trim() === "") return;
-          evaluateExpression(input);
+          if (input.trim()) return;
+          handleEvaluate();
           break;
 
         case "π":
@@ -174,6 +116,28 @@ function App() {
     [error, input, evaluateExpression]
   );
 
+  const handleEvaluate = useCallback(() => {
+    const { result, error } = evaluateExpression(input);
+
+    if (error) {
+      setOutput("");
+      setError(error);
+      return;
+    }
+
+    setOutput(result);
+    setError("");
+
+    const entry = {
+      id: Date.now(),
+      expression: input,
+      result,
+      createdAt: new Date().toISOString(),
+    };
+
+    setHistory((prev) => [entry, ...prev].slice(0, MAX_HISTORY_ITEMS));
+  }, [input]);
+  
   const handleClearHistory = () => {
     setHistory([]);
   };

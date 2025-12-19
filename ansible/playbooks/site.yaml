@@ -1,14 +1,8 @@
----
-- name: Configure monitor EC2 instance for Scientific Calculator
-  hosts: monitor
+- name: Configure Web Server and Deploy Application
+  hosts: web
   become: yes
 
-  vars:
-    # For now, manually set this. Later, we can pull from Terraform output.
-    synthetic_target_url: "https://YOUR_CLOUDWATCH_DOMAIN_HERE"
-
   roles:
-    - common
-    - hardening
-    - cloudwatch-agent
-    - synthetic-checks
+    - nginx
+    - app
+    - cloudwatch

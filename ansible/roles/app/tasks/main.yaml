@@ -1,0 +1,15 @@
+- name: Create app directory
+  file:
+    path: /var/www/calculator
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+
+- name: Copy build files
+  copy:
+    src: ../../build/
+    dest: /var/www/calculator
+    owner: nginx
+    group: nginx
+    mode: '0755'
