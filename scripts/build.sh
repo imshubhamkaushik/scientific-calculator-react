@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "📦 Building React application..."
 
-npm install
+npm ci
 npm run build
 
 echo "✅ Build completed successfully"
